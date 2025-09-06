@@ -1,117 +1,57 @@
-import { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Navbar from './components/layout/Navbar';
-import Dashboard from './components/dashboard/Dashboard';
-import MapComponent from './components/map/MapComponent';
-import OcrProcessor from './components/ai/OcrProcessor';
-import DssEngine from './components/ai/DssEngine';
-import Login from './components/auth/Login';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginForm from './components/Auth/LoginForm';
+import Header from './components/Layout/Header';
+import Sidebar from './components/Layout/Sidebar';
+import Dashboard from './pages/Dashboard';
+import Atlas from './pages/Atlas';
+import DecisionSupport from './pages/DecisionSupport';
+import Records from './pages/Records';
 
-function App() {
-  const [user, setUser] = useState(null);
-  const [mockData, setMockData] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Load mock data
-    fetch('/data/mockData.json')
-      .then(response => response.json())
-      .then(data => {
-        setMockData(data);
-        setIsLoading(false);
-      })
-      .catch(error => {
-        console.error('Error loading mock data:', error);
-        setIsLoading(false);
-      });
-    
-    // Check for user in localStorage
-    const storedUser = localStorage.getItem('fraUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+const AppContent: React.FC = () => {
+  const { isAuthenticated } = useAuth();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const handleLogin = (userData) => {
-    setUser(userData);
-    localStorage.setItem('fraUser', JSON.stringify(userData));
-  };
-
-  const handleLogout = () => {
-    setUser(null);
-    localStorage.removeItem('fraUser');
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-xl text-gray-700">Loading FRA Atlas...</p>
-        </div>
-      </div>
-    );
+  if (!isAuthenticated) {
+    return <LoginForm />;
   }
 
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <Navbar user={user} onLogout={handleLogout} />
-        
-        <Routes>
-          <Route 
-            path="/" 
-            element={
-              user ? (
-                <Navigate to="/dashboard" replace />
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-blue-50">
-                  <div className="max-w-3xl text-center space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-                    <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                      FRA Atlas & WebGIS Decision Support System
-                    </h1>
-                    <p className="text-xl text-gray-700 animate-in fade-in delay-300 duration-700">
-                      Empowering forest-dwelling communities through AI-powered spatial mapping and decision support
-                    </p>
-                    <div className="pt-4">
-                      <button 
-                        onClick={() => window.location.href = '/login'} 
-                        className="px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
-                      >
-                        Log In to Access
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            } 
-          />
-          
-          <Route path="/login" element={<Login onLogin={handleLogin} mockData={mockData} />} />
-          
-          <Route 
-            path="/dashboard" 
-            element={user ? <Dashboard user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
-          />
-          
-          <Route 
-            path="/map" 
-            element={user ? <MapComponent user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
-          />
-          
-          <Route 
-            path="/ocr" 
-            element={user?.role === 'admin' ? <OcrProcessor /> : <Navigate to="/dashboard" replace />} 
-          />
-          
-          <Route 
-            path="/dss" 
-            element={user ? <DssEngine user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
-          />
-        </Routes>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar isOpen={isSidebarOpen} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/atlas" element={<Atlas />} />
+            <Route path="/dss" element={<DecisionSupport />} />
+            <Route path="/records" element={<Records />} />
+            <Route path="/asset-mapping" element={<div className="text-center py-12 text-gray-500">Asset Mapping Module (Coming Soon)</div>} />
+            <Route path="/analytics" element={<div className="text-center py-12 text-gray-500">Advanced Analytics (Coming Soon)</div>} />
+            <Route path="/users" element={<div className="text-center py-12 text-gray-500">User Management (Coming Soon)</div>} />
+            <Route path="/settings" element={<div className="text-center py-12 text-gray-500">System management (Coming Soon)</div>} />
+            <Route path="/my-land" element={<div className="text-center py-12 text-gray-500">My Land View (Coming Soon)</div>} />
+            <Route path="/schemes" element={<div className="text-center py-12 text-gray-500">Eligible Schemes (Coming Soon)</div>} />
+            <Route path="/status" element={<div className="text-center py-12 text-gray-500">Application Status (Coming Soon)</div>} />
+          </Routes>
+        </main>
       </div>
-    </Router>
+    </div>
   );
-}
+};
+
+const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
+  );
+};
 
 export default App;
