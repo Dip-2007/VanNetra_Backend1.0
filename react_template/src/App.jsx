@@ -1,57 +1,83 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import LoginForm from './components/Auth/LoginForm';
-import Header from './components/Layout/Header';
-import Sidebar from './components/Layout/Sidebar';
-import Dashboard from './pages/Dashboard';
-import Atlas from './pages/Atlas';
-import DecisionSupport from './pages/DecisionSupport';
-import Records from './pages/Records';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 
+// Context
+import { AuthProvider, useAuth } from './components/context/AuthContext';
 
-const AppContent: React.FC = () => {
-  const { isAuthenticated } = useAuth();
+// Layout Components
+import Navbar from './components/layout/Navbar';
+import Sidebar from './components/layout/Sidebar';
+
+// Page/View Components
+import Login from './components/auth/Login';
+import Dashboard from './components/dashboard/Dashboard';
+import MapComponent from './components/map/MapComponent';
+import DssEngine from './components/ai/DssEngine';
+import OcrProcessor from './components/ai/OcrProcessor';
+
+/**
+ * A layout component for authenticated users. It includes the sidebar, navbar,
+ * and an <Outlet> for rendering the specific page content.
+ */
+const PrivateLayout = () => {
+  const { user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  if (!isAuthenticated) {
-    return <LoginForm />;
-  }
-
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar isOpen={isSidebarOpen} />
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar user={user} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Header isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
+        <Navbar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/atlas" element={<Atlas />} />
-            <Route path="/dss" element={<DecisionSupport />} />
-            <Route path="/records" element={<Records />} />
-            <Route path="/asset-mapping" element={<div className="text-center py-12 text-gray-500">Asset Mapping Module (Coming Soon)</div>} />
-            <Route path="/analytics" element={<div className="text-center py-12 text-gray-500">Advanced Analytics (Coming Soon)</div>} />
-            <Route path="/users" element={<div className="text-center py-12 text-gray-500">User Management (Coming Soon)</div>} />
-            <Route path="/settings" element={<div className="text-center py-12 text-gray-500">System management (Coming Soon)</div>} />
-            <Route path="/my-land" element={<div className="text-center py-12 text-gray-500">My Land View (Coming Soon)</div>} />
-            <Route path="/schemes" element={<div className="text-center py-12 text-gray-500">Eligible Schemes (Coming Soon)</div>} />
-            <Route path="/status" element={<div className="text-center py-12 text-gray-500">Application Status (Coming Soon)</div>} />
-          </Routes>
+          {/* Child routes will be rendered here */}
+          <Outlet />
         </main>
       </div>
     </div>
   );
 };
 
-const App: React.FC = () => {
+/**
+ * Main component for handling application routing.
+ * It conditionally renders routes based on the authentication status.
+ */
+const AppRoutes = () => {
+  const { isAuthenticated, user, mockData, login } = useAuth();
+
+  return (
+    <Routes>
+      {isAuthenticated ? (
+        // If authenticated, render the main application layout with nested routes
+        <Route element={<PrivateLayout />}>
+          <Route path="/dashboard" element={<Dashboard user={user} mockData={mockData} />} />
+          <Route path="/map" element={<MapComponent user={user} mockData={mockData} />} />
+          <Route path="/dss" element={<DssEngine user={user} mockData={mockData} />} />
+          <Route path="/ocr" element={<OcrProcessor />} />
+          <Route path="/records" element={<Navigate to="/ocr" replace />} />
+          {/* Any other authenticated route will redirect to the dashboard */}
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Route>
+      ) : (
+        // If not authenticated, only show the login route
+        <>
+          <Route path="/login" element={<Login onLogin={login} mockData={mockData} />} />
+          {/* Any other route will redirect to the login page */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </>
+      )}
+    </Routes>
+  );
+};
+
+const App = () => {
   return (
     <AuthProvider>
       <Router>
-        <AppContent />
+        <AppRoutes />
       </Router>
     </AuthProvider>
   );
 };
 
 export default App;
+
