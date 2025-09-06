@@ -1,83 +1,117 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
-
-// Context
-import { AuthProvider, useAuth } from './components/context/AuthContext';
-
-// Layout Components
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
-import Sidebar from './components/layout/Sidebar';
-
-// Page/View Components
-import Login from './components/auth/Login';
 import Dashboard from './components/dashboard/Dashboard';
 import MapComponent from './components/map/MapComponent';
-import DssEngine from './components/ai/DssEngine';
 import OcrProcessor from './components/ai/OcrProcessor';
+import DssEngine from './components/ai/DssEngine';
+import Login from './components/auth/Login';
 
-/**
- * A layout component for authenticated users. It includes the sidebar, navbar,
- * and an <Outlet> for rendering the specific page content.
- */
-const PrivateLayout = () => {
-  const { user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+function App() {
+  const [user, setUser] = useState(null);
+  const [mockData, setMockData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar user={user} isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar isSidebarOpen={isSidebarOpen} setIsSidebarOpen={setIsSidebarOpen} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6">
-          {/* Child routes will be rendered here */}
-          <Outlet />
-        </main>
+  useEffect(() => {
+    // Load mock data
+    fetch('/data/mockData.json')
+      .then(response => response.json())
+      .then(data => {
+        setMockData(data);
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error('Error loading mock data:', error);
+        setIsLoading(false);
+      });
+    
+    // Check for user in localStorage
+    const storedUser = localStorage.getItem('fraUser');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const handleLogin = (userData) => {
+    setUser(userData);
+    localStorage.setItem('fraUser', JSON.stringify(userData));
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    localStorage.removeItem('fraUser');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-xl text-gray-700">Loading FRA Atlas...</p>
+        </div>
       </div>
-    </div>
-  );
-};
-
-/**
- * Main component for handling application routing.
- * It conditionally renders routes based on the authentication status.
- */
-const AppRoutes = () => {
-  const { isAuthenticated, user, mockData, login } = useAuth();
+    );
+  }
 
   return (
-    <Routes>
-      {isAuthenticated ? (
-        // If authenticated, render the main application layout with nested routes
-        <Route element={<PrivateLayout />}>
-          <Route path="/dashboard" element={<Dashboard user={user} mockData={mockData} />} />
-          <Route path="/map" element={<MapComponent user={user} mockData={mockData} />} />
-          <Route path="/dss" element={<DssEngine user={user} mockData={mockData} />} />
-          <Route path="/ocr" element={<OcrProcessor />} />
-          <Route path="/records" element={<Navigate to="/ocr" replace />} />
-          {/* Any other authenticated route will redirect to the dashboard */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Route>
-      ) : (
-        // If not authenticated, only show the login route
-        <>
-          <Route path="/login" element={<Login onLogin={login} mockData={mockData} />} />
-          {/* Any other route will redirect to the login page */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </>
-      )}
-    </Routes>
+    <Router>
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Navbar user={user} onLogout={handleLogout} />
+        
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              user ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-green-50 to-blue-50">
+                  <div className="max-w-3xl text-center space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                    <h1 className="text-5xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+                      FRA Atlas & WebGIS Decision Support System
+                    </h1>
+                    <p className="text-xl text-gray-700 animate-in fade-in delay-300 duration-700">
+                      Empowering forest-dwelling communities through AI-powered spatial mapping and decision support
+                    </p>
+                    <div className="pt-4">
+                      <button 
+                        onClick={() => window.location.href = '/login'} 
+                        className="px-8 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        Log In to Access
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            } 
+          />
+          
+          <Route path="/login" element={<Login onLogin={handleLogin} mockData={mockData} />} />
+          
+          <Route 
+            path="/dashboard" 
+            element={user ? <Dashboard user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
+          />
+          
+          <Route 
+            path="/map" 
+            element={user ? <MapComponent user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
+          />
+          
+          <Route 
+            path="/ocr" 
+            element={user?.role === 'admin' ? <OcrProcessor /> : <Navigate to="/dashboard" replace />} 
+          />
+          
+          <Route 
+            path="/dss" 
+            element={user ? <DssEngine user={user} mockData={mockData} /> : <Navigate to="/login" replace />} 
+          />
+        </Routes>
+      </div>
+    </Router>
   );
-};
-
-const App = () => {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
-    </AuthProvider>
-  );
-};
+}
 
 export default App;
-
