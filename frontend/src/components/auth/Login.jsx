@@ -42,8 +42,8 @@ const Login = ({ onLogin }) => {
 
   return (
     <div
-      className="flex min-h-[calc(100vh-64px)] bg-cover bg-center"
-      style={{ backgroundImage: "url('/images/login-bg.jpg')" }}
+      className="flex min-h-screen bg-cover bg-center" // Changed: min-h-[calc(100vh-64px)] to min-h-screen
+      style={{ backgroundImage: "url('2021060946-scaled.jpg')" }}
     >
       <div className="w-full max-w-md m-auto">
         <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-2xl p-8">

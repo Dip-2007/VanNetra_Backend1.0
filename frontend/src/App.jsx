@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import Navbar from "./components/layout/Navbar";
 import Dashboard from "./components/dashboard/Dashboard";
@@ -11,12 +12,18 @@ import MapComponent from "./components/map/MapComponent";
 import OcrProcessor from "./components/ai/OcrProcessor";
 import DssEngine from "./components/ai/DssEngine";
 import Login from "./components/auth/Login";
-import Register from "./components/auth/Register"; // Import the new component
+import Register from "./components/auth/Register";
 
-function App() {
+// We create an inner component to contain the logic.
+// This allows us to use the `useLocation` hook correctly, as it will be inside the `<Router>`.
+const AppContent = () => {
   const [user, setUser] = useState(null);
   const [mockData, setMockData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation(); // Get the current location
+
+  // Determine if the navbar should be shown based on the route
+  const showNavbar = !['/login', '/register'].includes(location.pathname);
 
   useEffect(() => {
     // Load mock data
@@ -60,10 +67,11 @@ function App() {
   }
 
   return (
-    <Router>
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <Navbar user={user} onLogout={handleLogout} />
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Conditionally render the Navbar here */}
+      {showNavbar && <Navbar user={user} onLogout={handleLogout} />}
 
+      <main className="flex-1">
         <Routes>
           <Route
             path="/"
@@ -99,7 +107,6 @@ function App() {
             element={<Login onLogin={handleLogin} mockData={mockData} />}
           />
 
-          {/* Add the new register route */}
           <Route
             path="/register"
             element={<Register onLogin={handleLogin} />}
@@ -115,7 +122,6 @@ function App() {
               )
             }
           />
-          //for git push 
 
           <Route
             path="/map"
@@ -150,7 +156,17 @@ function App() {
             }
           />
         </Routes>
-      </div>
+      </main>
+    </div>
+  );
+};
+
+
+// The main App component now simply provides the Router context.
+function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }
