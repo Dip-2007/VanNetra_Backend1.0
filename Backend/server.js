@@ -51,8 +51,9 @@ app.post("/api/register", async (req, res) => {
     }
 
     // 2. Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // server.js - new code
+    // 2. Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10); // 10 is the number of salt rounds
 
     // 3. Create a new user in the database
     const newUser = new User({
