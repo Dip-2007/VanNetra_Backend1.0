@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Chart as ChartJS, 
-  ArcElement, 
-  Tooltip, 
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
   Legend,
   CategoryScale,
   LinearScale,
@@ -14,8 +14,8 @@ import { Pie, Bar } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(
-  ArcElement, 
-  Tooltip, 
+  ArcElement,
+  Tooltip,
   Legend,
   CategoryScale,
   LinearScale,
@@ -126,7 +126,7 @@ const Dashboard = ({ user, mockData }) => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 bg-[#f0f2f5]">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start mb-8">
         <div>
@@ -157,7 +157,7 @@ const Dashboard = ({ user, mockData }) => {
         <div className="space-y-8">
           {/* Statistics Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -178,7 +178,7 @@ const Dashboard = ({ user, mockData }) => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-blue-100 text-blue-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -198,7 +198,7 @@ const Dashboard = ({ user, mockData }) => {
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <div className="flex items-center">
                 <div className="p-3 rounded-full bg-green-100 text-green-600">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -220,21 +220,21 @@ const Dashboard = ({ user, mockData }) => {
 
           {/* Charts */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Claims by Status</h3>
               <div className="h-64">
                 <Pie data={statusChartData} />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Claims by Type</h3>
               <div className="h-64">
                 <Pie data={typeChartData} />
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Geographic Distribution</h3>
               <div className="h-64">
                 <Bar data={stateChartData} options={stateChartOptions} />
@@ -243,10 +243,10 @@ const Dashboard = ({ user, mockData }) => {
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Link to="/ocr" className="bg-green-50 hover:bg-green-100 p-4 rounded-lg flex items-center">
+              <Link to="/ocr" className="bg-[#E8F5E9] hover:bg-[#C8E6C9] p-4 rounded-lg flex items-center">
                 <div className="bg-green-100 p-2 rounded-md">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -258,7 +258,7 @@ const Dashboard = ({ user, mockData }) => {
                 </div>
               </Link>
               
-              <Link to="/map" className="bg-blue-50 hover:bg-blue-100 p-4 rounded-lg flex items-center">
+              <Link to="/map" className="bg-[#E3F2FD] hover:bg-[#BBDEFB] p-4 rounded-lg flex items-center">
                 <div className="bg-blue-100 p-2 rounded-md">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
@@ -270,7 +270,7 @@ const Dashboard = ({ user, mockData }) => {
                 </div>
               </Link>
               
-              <Link to="/dss" className="bg-purple-50 hover:bg-purple-100 p-4 rounded-lg flex items-center">
+              <Link to="/dss" className="bg-[#F3E5F5] hover:bg-[#E1BEE7] p-4 rounded-lg flex items-center">
                 <div className="bg-purple-100 p-2 rounded-md">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -290,7 +290,7 @@ const Dashboard = ({ user, mockData }) => {
       {user.role === 'user' && userRecord && (
         <div className="space-y-8">
           {/* User's Claim Card */}
-          <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="bg-[#F5F5F5] rounded-lg shadow overflow-hidden">
             <div className={`px-6 py-4 ${
               userRecord.claimStatus === 'Approved' ? 'bg-green-600' : 
               userRecord.claimStatus === 'Pending' ? 'bg-amber-500' : 'bg-red-600'
@@ -343,7 +343,7 @@ const Dashboard = ({ user, mockData }) => {
           </div>
           
           {/* Eligible Schemes */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-[#F5F5F5] rounded-lg shadow p-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Eligible Schemes</h3>
             
             {recommendedSchemes.length > 0 ? (
