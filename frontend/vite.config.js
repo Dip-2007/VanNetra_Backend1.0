@@ -11,6 +11,20 @@ export default defineConfig({
     react(),
   ],
   server: {
-    port: 3001, // Add this line to change the port
-  },
+    port: 3001,
+    proxy: {
+      // This rule proxies requests for your Node.js API (like /api/login)
+      "/api": {
+        target: "http://localhost:3002",
+        changeOrigin: true,
+      },
+      // This NEW rule proxies requests for your Python OCR service
+      "/ocr-api": {
+        target: "http://localhost:8000",
+        changeOrigin: true,
+        // This removes the '/ocr-api' prefix before sending to the Python server
+        rewrite: (path) => path.replace(/^\/ocr-api/, ""),
+      },
+    },
+  },
 });

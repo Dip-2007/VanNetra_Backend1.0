@@ -5,7 +5,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("./models/User"); // Import the User model
-const { createProxyMiddleware } = require("http-proxy-middleware");
 
 require("dotenv").config();
 
@@ -28,19 +27,6 @@ if (!mongoUri) {
     .then(() => console.log("Successfully connected to MongoDB"))
     .catch((err) => console.error("MongoDB connection error:", err));
 }
-
-// --- Proxy to Python Backend ---
-// Add this section before your API Endpoints
-app.use(
-  "/api/ocr",
-  createProxyMiddleware({
-    target: "http://localhost:8000", // The address of your Python server
-    changeOrigin: true,
-    pathRewrite: {
-      "^/api/ocr": "", // remove /api/ocr from the path
-    },
-  })
-);
 
 // --- API Endpoints ---
 
@@ -65,8 +51,6 @@ app.post("/api/register", async (req, res) => {
         .json({ error: "An account with this email already exists." });
     }
 
-    // 2. Hash the password
-    // server.js - new code
     // 2. Hash the password
     const hashedPassword = await bcrypt.hash(password, 10); // 10 is the number of salt rounds
 

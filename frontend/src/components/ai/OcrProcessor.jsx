@@ -36,6 +36,8 @@ const OcrProcessor = () => {
   /**
    * Sends the uploaded file to the backend for processing.
    */
+  //... inside the processOCR function
+
   const processOCR = async () => {
     if (!file) return;
 
@@ -45,30 +47,32 @@ const OcrProcessor = () => {
     formData.append("file", file);
 
     try {
-      // This URL points to your Node.js server, which will proxy the request
-      const response = await fetch("/api/ocr/process", {
+      // Call backend
+      const response = await fetch("/ocr-api/ocr/process", {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || "Failed to process document.");
+        throw new Error(`Server error: ${response.status}`);
       }
 
-      const data = await response.json();
-      setProcessedText(data.processedText);
-      setExtractedEntities(data.extractedEntities);
+      const result = await response.json();
+
+      // Assuming backend returns something like:
+      // { text: "...extracted...", entities: {...} }
+      setProcessedText(result.text || "");
+      setExtractedEntities(result.entities || null);
     } catch (error) {
-      console.error("OCR Error:", error);
-      setProcessedText(
-        `[Error: ${error.message}. Please ensure the document is clear and try again.]`
-      );
-      setExtractedEntities(null);
+      console.error("OCR processing failed:", error);
+      alert("Failed to process document. Please try again.");
     } finally {
       setProcessing(false);
     }
   };
+
+  //... rest of the function
+  //////////////////////////////////////////////
 
   const exportToJSON = () => {
     if (!extractedEntities) return;
