@@ -1,103 +1,113 @@
 from fastapi import FastAPI, File, UploadFile
-from PIL import Image
-import pytesseract
-import torch
+import easyocr
 from transformers import pipeline
+import re
+import os
 
-# IMPORTANT: Update this path to where you installed Tesseract
-# On Windows, it's typically in Program Files.
-# The 'r' before the string is important on Windows to handle backslashes correctly.
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+# --------------------------
+# Initialize FastAPI
+# --------------------------
+app = FastAPI(title="OCR + Multilingual NER API")
 
-app = FastAPI()
+# --------------------------
+# Initialize EasyOCR
+# --------------------------
+# Add 'hi' for Hindi, 'mr' for Marathi, 'en' for English
+reader = easyocr.Reader(['en', 'hi', 'mr'])
 
-# Load the NER pipeline from Hugging Face
-# This model will be downloaded the first time you run the script.
-ner_pipeline = pipeline("ner", model="dslim/bert-base-NER")
+# --------------------------
+# Load NER model (Fine-tuned)
+# --------------------------
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "models", "ner-finetuned-multilingual")
 
+# Check if model exists
+if not os.path.exists(MODEL_PATH):
+    raise RuntimeError(
+        f"Model not found at {MODEL_PATH}. "
+        "Please train or place your fine-tuned model here."
+    )
+
+ner_pipeline = pipeline(
+    "ner",
+    model=MODEL_PATH,
+    aggregation_strategy="simple"  # merges subwords automatically
+)
+
+# --------------------------
+# Helper function to clean OCR text
+# --------------------------
+def clean_text(text: str) -> str:
+    """Remove extra symbols, multiple spaces, and fix line breaks."""
+    text = re.sub(r'\s+', ' ', text)  # multiple spaces → single
+    text = re.sub(r'[^\w\s:/-]', '', text)  # remove special chars except : / -
+    return text.strip()
+
+# --------------------------
+# Helper function to chunk text
+# --------------------------
+def chunk_text(text: str, max_words=50) -> list:
+    """Splits text into chunks of max_words each. Returns list of strings."""
+    words = text.split()
+    chunks = []
+    for i in range(0, len(words), max_words):
+        chunk = " ".join(words[i:i+max_words])
+        chunks.append(chunk)
+    return chunks
+
+# --------------------------
+# OCR + NER Endpoint
+# --------------------------
 @app.post("/ocr/process")
 async def process_ocr(file: UploadFile = File(...)):
-    """
-    Processes an uploaded image file to perform OCR and NER.
-    """
     try:
-        # Perform OCR using Tesseract
-        image = Image.open(file.file)
-        processed_text = pytesseract.image_to_string(image)
+        # Step 1: Save uploaded file temporarily
+        contents = await file.read()
+        temp_file = "temp_upload.jpg"
+        with open(temp_file, "wb") as f:
+            f.write(contents)
 
-        # Perform NER using the Hugging Face pipeline
-        ner_results = ner_pipeline(processed_text)
+        # Step 2: OCR using EasyOCR
+        results = reader.readtext(temp_file)
+        raw_text = " ".join([res[1] for res in results])
+        clean_ocr_text = clean_text(raw_text)
 
-        # Process NER results to extract entities
-        extracted_entities = {
+        # Step 3: Chunk the text for NER
+        text_chunks = chunk_text(clean_ocr_text, max_words=50)
+
+        # Step 4: Apply NER chunk by chunk
+        aggregated_entities = {
             "names": [],
             "locations": [],
             "organizations": [],
-            "dates": [],
             "misc": []
         }
-        
-        current_entity_words = []
-        current_entity_type = None
 
-        for entity in ner_results:
-            # BERT-based NER models often split words (e.g., "Washington" -> "Wash", "##ington")
-            # This logic handles re-joining those words.
-            if entity['entity'].startswith('B-'): # Beginning of a new entity
-                if current_entity_type:
-                    # Append the previously collected entity
-                    entity_name = "".join(current_entity_words).replace("##", "")
-                    if current_entity_type == 'PER' and entity_name not in extracted_entities["names"]:
-                         extracted_entities["names"].append(entity_name)
-                    elif current_entity_type == 'LOC' and entity_name not in extracted_entities["locations"]:
-                        extracted_entities["locations"].append(entity_name)
-                    elif current_entity_type == 'ORG' and entity_name not in extracted_entities["organizations"]:
-                        extracted_entities["organizations"].append(entity_name)
-                    elif current_entity_type == 'MISC' and entity_name not in extracted_entities["misc"]:
-                        extracted_entities["misc"].append(entity_name)
+        for chunk in text_chunks:
+            ner_results = ner_pipeline(chunk)
+            for entity in ner_results:
+                label = entity["entity_group"]
+                word = entity["word"]
 
-                current_entity_words = [entity['word']]
-                current_entity_type = entity['entity'][2:]
-            elif entity['entity'].startswith('I-') and current_entity_type == entity['entity'][2:]:
-                # Inside an entity, continue collecting words
-                current_entity_words.append(entity['word'])
-            else:
-                 # Not part of the previous entity, so append what we have
-                if current_entity_type:
-                    entity_name = "".join(current_entity_words).replace("##", "")
-                    if current_entity_type == 'PER' and entity_name not in extracted_entities["names"]:
-                         extracted_entities["names"].append(entity_name)
-                    elif current_entity_type == 'LOC' and entity_name not in extracted_entities["locations"]:
-                        extracted_entities["locations"].append(entity_name)
-                    elif current_entity_type == 'ORG' and entity_name not in extracted_entities["organizations"]:
-                        extracted_entities["organizations"].append(entity_name)
-                    elif current_entity_type == 'MISC' and entity_name not in extracted_entities["misc"]:
-                        extracted_entities["misc"].append(entity_name)
-                current_entity_words = []
-                current_entity_type = None
-
-        # Append the last entity if it exists
-        if current_entity_type and current_entity_words:
-            entity_name = "".join(current_entity_words).replace("##", "")
-            if current_entity_type == 'PER' and entity_name not in extracted_entities["names"]:
-                    extracted_entities["names"].append(entity_name)
-            elif current_entity_type == 'LOC' and entity_name not in extracted_entities["locations"]:
-                extracted_entities["locations"].append(entity_name)
-            elif current_entity_type == 'ORG' and entity_name not in extracted_entities["organizations"]:
-                extracted_entities["organizations"].append(entity_name)
-            elif current_entity_type == 'MISC' and entity_name not in extracted_entities["misc"]:
-                extracted_entities["misc"].append(entity_name)
-
+                if label == "PER" and word not in aggregated_entities["names"]:
+                    aggregated_entities["names"].append(word)
+                elif label == "LOC" and word not in aggregated_entities["locations"]:
+                    aggregated_entities["locations"].append(word)
+                elif label == "ORG" and word not in aggregated_entities["organizations"]:
+                    aggregated_entities["organizations"].append(word)
+                elif label == "MISC" and word not in aggregated_entities["misc"]:
+                    aggregated_entities["misc"].append(word)
 
         return {
-            "processedText": processed_text,
-            "extractedEntities": extracted_entities
+            "text": clean_ocr_text,
+            "entities": aggregated_entities
         }
+
     except Exception as e:
-        return {"error": f"An error occurred: {str(e)}"}
+        return {"error": str(e)}
 
-
+# --------------------------
+# Run FastAPI (only if called directly)
+# --------------------------
 if __name__ == "__main__":
     import uvicorn
-    # This will run the server on http://localhost:8000
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

@@ -1,0 +1,9 @@
+transformers
+datasets
+seqeval
+torch
+accelerate
+tensorboard
+easyocr
+opencv-python
+huggingface-hub

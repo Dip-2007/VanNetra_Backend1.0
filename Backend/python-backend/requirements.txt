@@ -1,7 +1,11 @@
 fastapi
 uvicorn
 python-multipart
-pytesseract
 transformers
 torch
 Pillow
+Flask
+Flask-Cors
+pytesseract
+Pillow
+spacy
